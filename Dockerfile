@@ -1,6 +1,6 @@
 FROM php:8.2-fpm-alpine
 
-# Pasang dependencies sistem & extension MySQL
+# Pasang dependencies sistem & libraries untuk PHP extensions
 RUN apk add --no-cache \
     nginx \
     curl \
@@ -9,20 +9,24 @@ RUN apk add --no-cache \
     libxml2-dev \
     zip \
     unzip \
+    libzip-dev \
+    freetype-dev \
+    libjpeg-turbo-dev \
     icu-dev \
     oniguruma-dev \
-    && docker-php-ext-install pdo pdo_mysql intl bcmath opcache
+    && docker-php-ext-configure gd --with-freetype --with-jpeg \
+    && docker-php-ext-install pdo pdo_mysql intl bcmath opcache zip gd
 
 # Pasang Composer
 COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 
 WORKDIR /var/www
 
-# Salin kod projek
+# Salin fail projek
 COPY . .
 
-# Pasang dependencies composer
-RUN composer install --no-dev --optimize-autoloader
+# Pasang dependencies Composer
+RUN composer install --no-dev --optimize-autoloader --ignore-platform-reqs
 
 # Konfigurasi Nginx
 RUN echo 'server { \
@@ -40,7 +44,7 @@ RUN echo 'server { \
     } \
 }' > /etc/nginx/http.d/default.conf
 
-# Kebenaran folder storage & cache
+# Tetapkan kebenaran folder storage & cache
 RUN chown -R www-data:www-data /var/www/storage /var/www/bootstrap/cache
 
 EXPOSE 80
