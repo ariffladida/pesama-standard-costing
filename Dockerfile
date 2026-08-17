@@ -31,10 +31,16 @@ COPY nginx.conf /etc/nginx/http.d/default.conf
 # Pasang Composer dependencies
 RUN composer install --no-dev --optimize-autoloader --no-interaction --ignore-platform-reqs
 
-# Tetapkan kebenaran folder Laravel
-RUN chown -R www-data:www-data /var/www/storage /var/www/bootstrap/cache
+# Cipta direktori cache Laravel & tetapkan kebenaran folder
+RUN mkdir -p /var/www/storage/framework/sessions \
+             /var/www/storage/framework/views \
+             /var/www/storage/framework/cache \
+             /var/www/storage/logs \
+             /var/www/bootstrap/cache \
+    && chown -R www-data:www-data /var/www/storage /var/www/bootstrap/cache \
+    && chmod -R 775 /var/www/storage /var/www/bootstrap/cache
 
 EXPOSE 80
 
-# Mulakan PHP-FPM dan Nginx terus (tanpa sekat startup jika DB lambat connect)
+# Mulakan PHP-FPM dan Nginx
 CMD php-fpm -D && nginx -g "daemon off;"
