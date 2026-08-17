@@ -1,6 +1,6 @@
 FROM php:8.2-fpm-alpine
 
-# Pasang dependencies sistem & libraries untuk PHP extensions
+# Pasang kelengkapan sistem & pustaka grafik/arkib
 RUN apk add --no-cache \
     nginx \
     curl \
@@ -25,10 +25,10 @@ WORKDIR /var/www
 # Salin fail projek
 COPY . .
 
-# Pasang dependencies Composer
-RUN composer install --no-dev --optimize-autoloader --ignore-platform-reqs
+# Pasang pakej Composer tanpa sekatan keperluan platform
+RUN composer install --no-dev --optimize-autoloader --no-interaction --ignore-platform-reqs
 
-# Konfigurasi Nginx
+# Konfigurasi Nginx ringkas
 RUN echo 'server { \
     listen 80; \
     root /var/www/public; \
@@ -44,12 +44,12 @@ RUN echo 'server { \
     } \
 }' > /etc/nginx/http.d/default.conf
 
-# Tetapkan kebenaran folder storage & cache
+# Kebenaran folder storage & cache Laravel
 RUN chown -R www-data:www-data /var/www/storage /var/www/bootstrap/cache
 
 EXPOSE 80
 
-# Script run database migration & start server
+# Jalankan seeder & lancarkan Nginx + PHP-FPM
 CMD php artisan config:clear && \
     php artisan migrate --force --seed --seeder=MasterDataSeeder && \
     php-fpm -D && \
