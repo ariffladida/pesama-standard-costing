@@ -1,10 +1,11 @@
 FROM php:8.2-fpm-alpine
 
-# Pasang kelengkapan sistem & pustaka grafik/arkib
+# Pasang dependencies sistem, sijil SSL & extension MySQL
 RUN apk add --no-cache \
     nginx \
     curl \
     git \
+    ca-certificates \
     libpng-dev \
     libxml2-dev \
     zip \
@@ -14,6 +15,7 @@ RUN apk add --no-cache \
     libjpeg-turbo-dev \
     icu-dev \
     oniguruma-dev \
+    && update-ca-certificates \
     && docker-php-ext-configure gd --with-freetype --with-jpeg \
     && docker-php-ext-install pdo pdo_mysql intl bcmath opcache zip gd
 
@@ -25,10 +27,10 @@ WORKDIR /var/www
 # Salin fail projek
 COPY . .
 
-# Pasang pakej Composer tanpa sekatan keperluan platform
+# Pasang dependencies Composer
 RUN composer install --no-dev --optimize-autoloader --no-interaction --ignore-platform-reqs
 
-# Konfigurasi Nginx ringkas
+# Konfigurasi Nginx
 RUN echo 'server { \
     listen 80; \
     root /var/www/public; \
@@ -49,7 +51,7 @@ RUN chown -R www-data:www-data /var/www/storage /var/www/bootstrap/cache
 
 EXPOSE 80
 
-# Jalankan seeder & lancarkan Nginx + PHP-FPM
+# Script run database migration & start server
 CMD php artisan config:clear && \
     php artisan migrate --force --seed --seeder=MasterDataSeeder && \
     php-fpm -D && \
