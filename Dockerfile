@@ -1,6 +1,6 @@
 FROM php:8.2-fpm-alpine
 
-# Pasang dependencies sistem, sijil SSL & extension MySQL
+# Pasang kelengkapan sistem & library
 RUN apk add --no-cache \
     nginx \
     curl \
@@ -24,35 +24,17 @@ COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 
 WORKDIR /var/www
 
-# Salin fail projek
+# Salin fail projek & konfigurasi Nginx
 COPY . .
+COPY nginx.conf /etc/nginx/http.d/default.conf
 
-# Pasang dependencies Composer
+# Pasang Composer dependencies
 RUN composer install --no-dev --optimize-autoloader --no-interaction --ignore-platform-reqs
 
-# Konfigurasi Nginx
-RUN echo 'server { \
-    listen 80; \
-    root /var/www/public; \
-    index index.php; \
-    location / { \
-        try_files $uri $uri/ /index.php?$query_string; \
-    } \
-    location ~ \.php$ { \
-        fastcgi_pass 127.0.0.1:9000; \
-        fastcgi_index index.php; \
-        fastcgi_param SCRIPT_FILENAME $document_root$fastcgi_script_name; \
-        include fastcgi_params; \
-    } \
-}' > /etc/nginx/http.d/default.conf
-
-# Kebenaran folder storage & cache Laravel
+# Tetapkan kebenaran folder Laravel
 RUN chown -R www-data:www-data /var/www/storage /var/www/bootstrap/cache
 
 EXPOSE 80
 
-# Script run database migration & start server
-CMD php artisan config:clear && \
-    php artisan migrate --force --seed --seeder=MasterDataSeeder && \
-    php-fpm -D && \
-    nginx -g "daemon off;"
+# Mulakan PHP-FPM dan Nginx terus (tanpa sekat startup jika DB lambat connect)
+CMD php-fpm -D && nginx -g "daemon off;"
