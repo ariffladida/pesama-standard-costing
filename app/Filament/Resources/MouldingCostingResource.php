@@ -17,7 +17,7 @@ class MouldingCostingResource extends Resource
     protected static ?string $model = MouldingCosting::class;
     protected static ?string $navigationIcon = 'heroicon-o-view-columns';
     protected static ?string $navigationGroup = 'Standard Costing';
-    protected static ?string $navigationLabel = 'Moulding Costing';
+    protected static ?string $navigationLabel = 'Moulding';
     protected static ?string $modelLabel = 'Moulding Costing';
     protected static ?string $pluralModelLabel = 'Moulding Costings';
     protected static ?int $navigationSort = 2;

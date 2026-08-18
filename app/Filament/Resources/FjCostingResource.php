@@ -17,7 +17,7 @@ class FjCostingResource extends Resource
     protected static ?string $model = FjCosting::class;
     protected static ?string $navigationIcon = 'heroicon-o-puzzle-piece';
     protected static ?string $navigationGroup = 'Standard Costing';
-    protected static ?string $navigationLabel = 'Finger Joint Costing';
+    protected static ?string $navigationLabel = 'Finger Joint';
     protected static ?string $modelLabel = 'Finger Joint Costing';
     protected static ?string $pluralModelLabel = 'Finger Joint Costings';
     protected static ?int $navigationSort = 3;
