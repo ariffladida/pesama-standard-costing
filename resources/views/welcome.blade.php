@@ -73,7 +73,7 @@
                 <div>
                     <div class="flex items-center justify-between mb-5">
                         <span class="text-xs font-bold px-3 py-1 bg-slate-800 text-emerald-400 border border-emerald-500/20 rounded-lg">01</span>
-                        <span class="text-xs text-slate-500 uppercase tracking-widest font-semibold">ST Series</span>
+                        <span class="text-xs text-slate-500 uppercase tracking-widest font-semibold">Sawn Timber</span>
                     </div>
                     <h3 class="text-xl font-bold text-white mb-2">Sawn Timber</h3>
                     <p class="text-sm text-slate-400 mb-6 leading-relaxed">
@@ -97,7 +97,7 @@
                         <span class="text-xs font-bold px-3 py-1 bg-slate-800 text-teal-400 border border-teal-500/20 rounded-lg">02</span>
                         <span class="text-xs text-slate-500 uppercase tracking-widest font-semibold">Moulding</span>
                     </div>
-                    <h3 class="text-xl font-bold text-white mb-2">Moulding (Kumai)</h3>
+                    <h3 class="text-xl font-bold text-white mb-2">Moulding</h3>
                     <p class="text-sm text-slate-400 mb-6 leading-relaxed">
                         Penetapan kos kumai berasaskan sumber bahan mentah (Process & Purchase Luar) bagi saiz standard pasaran.
                     </p>
@@ -117,7 +117,7 @@
                 <div>
                     <div class="flex items-center justify-between mb-5">
                         <span class="text-xs font-bold px-3 py-1 bg-slate-800 text-cyan-400 border border-cyan-500/20 rounded-lg">03</span>
-                        <span class="text-xs text-slate-500 uppercase tracking-widest font-semibold">FJ Series</span>
+                        <span class="text-xs text-slate-500 uppercase tracking-widest font-semibold">FJ</span>
                     </div>
                     <h3 class="text-xl font-bold text-white mb-2">Finger Joint (FJ)</h3>
                     <p class="text-sm text-slate-400 mb-6 leading-relaxed">
@@ -139,7 +139,7 @@
 
     <!-- Footer -->
     <footer class="border-t border-slate-900 py-6 text-center text-xs text-slate-400 font-medium">
-        Timber Product Costing Engine &copy; 2026. All rights reserved.
+        Golden Pharos Berhad &copy; 2026. All rights reserved.
     </footer>
 
 </body>
