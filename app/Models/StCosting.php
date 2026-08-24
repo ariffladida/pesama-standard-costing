@@ -31,4 +31,10 @@ class StCosting extends Model
         'transport_cost_per_ton',
         'total_avg_cost_per_ton',
     ];
+    
+    public function items(): \Illuminate\Database\Eloquent\Relations\HasMany
+    {
+        return $this->hasMany(StCostingItem::class);
+    }
+    
 }
