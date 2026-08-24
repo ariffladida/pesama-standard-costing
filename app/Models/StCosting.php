@@ -22,4 +22,13 @@ class StCosting extends Model
     {
         return $this->hasMany(StGradeBreakdown::class);
     }
+
+    protected $fillable = [
+        'batch_no',
+        'species_id',
+        'category',
+        'log_cost_per_ton',
+        'transport_cost_per_ton',
+        'total_avg_cost_per_ton',
+    ];
 }
