@@ -61,6 +61,9 @@ class CoaItemResource extends Resource
     public static function table(Table $table): Table
     {
         return $table
+            ->paginationPageOptions([10, 25, 50, 100])
+            ->defaultPaginationPageOption(25)
+            ->paginated([10, 25, 50, 100])
             ->columns([
                 TextColumn::make('coa_code')->label('Kod Akaun')->sortable()->searchable(),
                 TextColumn::make('name')->label('Keterangan')->searchable(),
