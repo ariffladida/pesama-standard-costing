@@ -4,8 +4,10 @@ namespace App\Filament\Resources;
 
 use App\Filament\Resources\StCostingResource\Pages;
 use App\Models\StCosting;
+use App\Models\CoaItem;
 use Filament\Forms;
 use Filament\Forms\Form;
+use Filament\Forms\Components\Actions\Action as FormAction;
 use Filament\Forms\Components\Section;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Select;
@@ -31,7 +33,7 @@ class StCostingResource extends Resource
     {
         return $form
             ->schema([
-                // 1. REPEATER: CAMPURAN BALAK & PELBAGAI BATCH
+                // 1. CAMPURAN BALAK & PELBAGAI BATCH
                 Section::make('1. Campuran Balak & Batch (Multiple Log Inputs)')
                     ->description('Tambah satu atau lebih baris Batch & Spesies untuk dikira purata kos bahan mentah.')
                     ->schema([
@@ -104,48 +106,90 @@ class StCostingResource extends Resource
                             }),
                     ]),
 
-                // 2. STRUKTUR KOS PEMBUATAN & OPERASI
-                Section::make('2. Struktur Kos Pembuatan (Manufacturing Cost per Tan)')
+                // 2. STRUKTUR KOS PEMBUATAN & PECAHAN COA
+                Section::make('2. Struktur Kos Pembuatan & Pecahan 129 COA')
+                    ->description('Kos dikira secara automatik daripada 129 kod akaun pembuatan dengan pengasingan Kos Tetap vs Kos Berubah.')
                     ->schema([
                         TextInput::make('log_cost_per_ton')
-                            ->label('Purata Kos Balak / Tan (Auto)')
+                            ->label('Purata Kos Balak / Tan (RM)')
                             ->numeric()
                             ->prefix('RM')
                             ->readOnly()
                             ->helperText('Dikira secara purata wajaran daripada senarai batch di atas.'),
 
                         TextInput::make('fixed_cost_per_ton')
-                            ->label('Kos Tetap / Fixed Cost (RM/Tan)')
+                            ->label('Kos Tetap (Fixed COA)')
                             ->numeric()
-                            ->default(68.00)
                             ->prefix('RM')
-                            ->reactive()
-                            ->afterStateUpdated(fn (Set $set, Get $get) => self::recalculateTotals($set, $get)),
+                            ->default(fn () => CoaItem::where('cost_type', 'Fixed')->sum('standard_rate_per_ton'))
+                            ->readOnly(),
 
                         TextInput::make('variable_cost_per_ton')
-                            ->label('Kos Berubah / Variable Cost (RM/Tan)')
+                            ->label('Kos Berubah (Variable COA)')
                             ->numeric()
-                            ->default(0.00)
                             ->prefix('RM')
-                            ->reactive()
-                            ->afterStateUpdated(fn (Set $set, Get $get) => self::recalculateTotals($set, $get)),
+                            ->default(fn () => CoaItem::where('cost_type', 'Variable')->sum('standard_rate_per_ton'))
+                            ->readOnly(),
 
                         TextInput::make('manufacturing_cost_per_ton')
-                            ->label('Base Manufacturing Cost / Tan')
+                            ->label('Base Manufacturing Cost / Tan ("Nilai Sedebak")')
                             ->numeric()
                             ->prefix('RM')
                             ->readOnly()
-                            ->helperText('Fixed Cost + Variable Cost'),
+                            ->suffixAction(
+                                FormAction::make('viewCoaDetails')
+                                    ->label('🔍 Drill-Down COA')
+                                    ->icon('heroicon-m-table-cells')
+                                    ->modalHeading('Pecahan Terperinci 129 Kod Akaun Pembuatan')
+                                    ->modalDescription('Senarai lengkap akaun pembuatan, kategori Fixed/Variable, dan fleksibiliti pengurangan.')
+                                    ->modalSubmitAction(false)
+                                    ->modalContent(function () {
+                                        return view('filament.modals.coa-breakdown-table', [
+                                            'coas' => CoaItem::all(),
+                                        ]);
+                                    })
+                            ),
 
                         TextInput::make('total_avg_cost_per_ton')
                             ->label('Total Base Cost / Tan (RM)')
                             ->numeric()
                             ->prefix('RM')
                             ->readOnly()
-                            ->helperText('Log Cost + Base Manufacturing Cost'),
+                            ->helperText('Purata Kos Balak + Base Manufacturing Cost'),
                     ])->columns(3),
 
-                // 3. PELARASAN PROSES TAMBAHAN (KD & CUTTING)
+                // 3. SIMULASI PENGURANGAN KOS & MITIGASI
+                Section::make('Simulasi Pengurangan Kos (Cost Reduction & Mitigation)')
+                    ->description('Uji arahan penjimatan kos terhadap akaun yang fleksibel sahaja.')
+                    ->collapsed()
+                    ->schema([
+                        Select::make('simulation_cut_percent')
+                            ->label('Peratus Pengurangan Kos Fleksibel (%)')
+                            ->options([
+                                '0' => '0% (Standard Asal)',
+                                '5' => 'Potong 5%',
+                                '10' => 'Potong 10%',
+                                '15' => 'Potong 15%',
+                                '20' => 'Potong 20%',
+                            ])
+                            ->default('0')
+                            ->reactive()
+                            ->afterStateUpdated(function ($state, Set $set, Get $get) {
+                                $cut = (float) $state / 100;
+
+                                $fixedNon = CoaItem::where('cost_type', 'Fixed')->where('is_reducible', false)->sum('standard_rate_per_ton');
+                                $fixedRed = CoaItem::where('cost_type', 'Fixed')->where('is_reducible', true)->sum('standard_rate_per_ton') * (1 - $cut);
+
+                                $varNon = CoaItem::where('cost_type', 'Variable')->where('is_reducible', false)->sum('standard_rate_per_ton');
+                                $varRed = CoaItem::where('cost_type', 'Variable')->where('is_reducible', true)->sum('standard_rate_per_ton') * (1 - $cut);
+
+                                $set('fixed_cost_per_ton', number_format($fixedNon + $fixedRed, 2, '.', ''));
+                                $set('variable_cost_per_ton', number_format($varNon + $varRed, 2, '.', ''));
+                                self::recalculateTotals($set, $get);
+                            }),
+                    ]),
+
+                // 4. PELARASAN PROSES TAMBAHAN (KD & CUTTING)
                 Section::make('3. Pelarasan Kos Proses Tambahan (Adjust Cost / Tan)')
                     ->schema([
                         Toggle::make('has_kd')
@@ -187,7 +231,7 @@ class StCostingResource extends Resource
                             ->readOnly(),
                     ])->columns(3),
 
-                // 4. ALIRAN KERJA MARGIN & HARGA JUALAN BENCHMARK
+                // 5. ALIRAN KERJA MARGIN & BENCHMARK HARGA
                 Section::make('4. Penentuan Margin & Harga Jualan Benchmark')
                     ->schema([
                         Select::make('market_type')
@@ -240,7 +284,7 @@ class StCostingResource extends Resource
                             ->columnSpanFull(),
                     ])->columns(3),
 
-                // 5. PECAHAN GRED AKHIR
+                // 6. PECAHAN GRED AKHIR
                 Section::make('5. Pecahan Kos Mengikut Gred (Grade Breakdown)')
                     ->schema([
                         Repeater::make('gradeBreakdowns')
@@ -286,10 +330,9 @@ class StCostingResource extends Resource
             ]);
     }
 
-    // FUNGSI KALKULATOR BERPUSAT
     public static function recalculateTotals(Set $set, Get $get): void
     {
-        // 1. Kira Purata Wajaran Kos Balak dari Repeater Items
+        // 1. Purata wajaran kos balak
         $items = $get('items') ?? [];
         $totalCost = 0;
         $totalVolume = 0;
@@ -304,23 +347,23 @@ class StCostingResource extends Resource
         $avgLogCost = $totalVolume > 0 ? ($totalCost / $totalVolume) : 0;
         $set('log_cost_per_ton', number_format($avgLogCost, 2, '.', ''));
 
-        // 2. Base Manufacturing Cost = Fixed + Variable
+        // 2. Base Manufacturing Cost
         $fixed = (float) $get('fixed_cost_per_ton');
         $variable = (float) $get('variable_cost_per_ton');
         $mfgCost = $fixed + $variable;
         $set('manufacturing_cost_per_ton', number_format($mfgCost, 2, '.', ''));
 
-        // 3. Total Base Cost = Purata Kos Balak + Manufacturing Cost
+        // 3. Total Base Cost
         $totalBase = $avgLogCost + $mfgCost;
         $set('total_avg_cost_per_ton', number_format($totalBase, 2, '.', ''));
 
-        // 4. Adjusted Cost = Base Cost + KD + Cutting
+        // 4. Adjusted Cost (KD & Cutting)
         $kd = $get('has_kd') ? (float) $get('kd_cost_per_ton') : 0;
         $cutting = $get('has_cutting') ? (float) $get('cutting_cost_per_ton') : 0;
         $adjustedCost = $totalBase + $kd + $cutting;
         $set('adjusted_cost_per_ton', number_format($adjustedCost, 2, '.', ''));
 
-        // 5. Benchmark Price berasaskan Jenis Pasaran
+        // 5. Benchmark Price
         $marginPct = (float) $get('target_margin_percentage') / 100;
         $marketType = $get('market_type');
 
