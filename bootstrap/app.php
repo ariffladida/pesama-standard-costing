@@ -51,8 +51,5 @@ $app->singleton(
 | from the actual running of the application and sending responses.
 |
 */
-->withMiddleware(function (Middleware $middleware) {
-    $middleware->trustProxies(at: '*');
-})
 
 return $app;
