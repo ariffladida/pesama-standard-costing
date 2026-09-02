@@ -26,7 +26,6 @@ use Filament\Tables\Columns\TextColumn;
 class StCostingResource extends Resource
 {
     protected static ?string $model = StCosting::class;
-
     protected static ?string $navigationIcon = 'heroicon-o-table-cells';
     protected static ?string $navigationGroup = 'Standard Costing';
     protected static ?string $navigationLabel = 'Sawn Timber';
@@ -35,15 +34,15 @@ class StCostingResource extends Resource
     {
         return $form
             ->schema([
-                Grid::make(['default' => 1, 'lg' => 3])
+                Grid::make(['default' => 1, 'xl' => 12])
                     ->schema([
                         // =========================================================================
-                        // LAJUR KIRI: KAWASAN INPUT PEGAWAI (2/3 SKRIN)
+                        // BAHAGIAN UTAMA: ALIRAN KERJA INPUT PEGAWAI (8 / 12 KOLUM)
                         // =========================================================================
-                        Grid::make(1)->columnSpan(['lg' => 2])->schema([
+                        Grid::make(1)->columnSpan(['xl' => 8])->schema([
                             
-                            // 1. INPUT CAMPURAN BALAK (BERSIH TANPA MEDAN CATEGORY)
-                            Section::make('1. Campuran Balak & Batch (Log Inputs)')
+                            // 1. INPUT BALAK & SPESIES
+                            Section::make('1. Campuran Balak Mentah (Log Intake)')
                                 ->description('Kemasukan batch dan kos belian balak untuk purata wajaran kos.')
                                 ->icon('heroicon-o-archive-box')
                                 ->schema([
@@ -52,9 +51,9 @@ class StCostingResource extends Resource
                                         ->schema([
                                             TextInput::make('batch_no')
                                                 ->label('Batch No')
-                                                ->placeholder('B1')
+                                                ->placeholder('B01')
                                                 ->required()
-                                                ->columnSpan(3),
+                                                ->columnSpan(['default' => 12, 'md' => 2]),
 
                                             Select::make('species_id')
                                                 ->label('Spesies Balak')
@@ -62,7 +61,7 @@ class StCostingResource extends Resource
                                                 ->searchable()
                                                 ->preload()
                                                 ->required()
-                                                ->columnSpan(5),
+                                                ->columnSpan(['default' => 12, 'md' => 4]),
 
                                             TextInput::make('volume_ton')
                                                 ->label('Kuantiti (Tan)')
@@ -76,7 +75,7 @@ class StCostingResource extends Resource
                                                     self::recalculateTotals($livewire);
                                                 })
                                                 ->required()
-                                                ->columnSpan(2),
+                                                ->columnSpan(['default' => 6, 'md' => 3]),
 
                                             TextInput::make('log_cost_per_ton')
                                                 ->label('Kos Balak (RM/Tan)')
@@ -90,26 +89,25 @@ class StCostingResource extends Resource
                                                     self::recalculateTotals($livewire);
                                                 })
                                                 ->required()
-                                                ->columnSpan(2),
+                                                ->columnSpan(['default' => 6, 'md' => 3]),
 
                                             Hidden::make('subtotal_cost')->default(0),
                                         ])
                                         ->columns(12)
                                         ->defaultItems(1)
-                                        ->addActionLabel('+ Tambah Batch / Spesies')
+                                        ->addActionLabel('+ Tambah Batch / Spesies Balak')
                                         ->live()
-                                        ->afterStateUpdated(function ($livewire) {
-                                            self::recalculateTotals($livewire);
-                                        }),
+                                        ->afterStateUpdated(fn ($livewire) => self::recalculateTotals($livewire)),
                                 ]),
 
-                            // 2. PELARASAN PROSES TAMBAHAN
-                            Section::make('2. Pelarasan Proses Tambahan (Adjust Cost)')
+                            // 2. RAWATAN & PROSES TAMBAHAN
+                            Section::make('2. Rawatan & Proses Tambahan (Value-Add)')
                                 ->icon('heroicon-o-wrench-screwdriver')
                                 ->schema([
                                     Grid::make(2)->schema([
                                         Toggle::make('has_kd')
-                                            ->label('Proses Kiln Drying (KD)')
+                                            ->label('Kiln Drying (KD)')
+                                            ->helperText('Aktifkan untuk kos pengeringan relau')
                                             ->inline(false)
                                             ->live()
                                             ->afterStateUpdated(function ($state, Set $set, $livewire) {
@@ -118,7 +116,7 @@ class StCostingResource extends Resource
                                             }),
 
                                         TextInput::make('kd_cost_per_ton')
-                                            ->label('Kos KD / Tan (RM)')
+                                            ->label('Kadar Kos KD / Tan')
                                             ->numeric()
                                             ->prefix('RM')
                                             ->default(0)
@@ -129,7 +127,8 @@ class StCostingResource extends Resource
 
                                     Grid::make(2)->schema([
                                         Toggle::make('has_cutting')
-                                            ->label('Proses Cutting / Potong')
+                                            ->label('Cutting / Pemotongan Khas')
+                                            ->helperText('Aktifkan untuk upah belah saiz khas')
                                             ->inline(false)
                                             ->live()
                                             ->afterStateUpdated(function ($state, Set $set, $livewire) {
@@ -138,7 +137,7 @@ class StCostingResource extends Resource
                                             }),
 
                                         TextInput::make('cutting_cost_per_ton')
-                                            ->label('Kos Potong / Tan (RM)')
+                                            ->label('Kadar Kos Potong / Tan')
                                             ->numeric()
                                             ->prefix('RM')
                                             ->default(0)
@@ -148,16 +147,16 @@ class StCostingResource extends Resource
                                     ]),
                                 ]),
 
-                            // 3. TETAPAN JUALAN & ALIRAN KELULUSAN
-                            Section::make('3. Penetapan Jualan & Aliran Kelulusan')
+                            // 3. PENETAPAN JUALAN & STATUS KELULUSAN
+                            Section::make('3. Polisi Jualan & Kelulusan Harga')
                                 ->icon('heroicon-o-banknotes')
                                 ->schema([
                                     Grid::make(2)->schema([
                                         Select::make('market_type')
                                             ->label('Pasaran Sasaran')
                                             ->options([
-                                                'Local' => 'Local (Markup %)',
-                                                'Export' => 'Export (Reverse Margin %)',
+                                                'Local' => 'Pasaran Tempatan (Markup %)',
+                                                'Export' => 'Eksport (Reverse Margin %)',
                                             ])
                                             ->default('Local')
                                             ->live()
@@ -179,14 +178,14 @@ class StCostingResource extends Resource
 
                                     Grid::make(2)->schema([
                                         TextInput::make('actual_selling_price_per_ton')
-                                            ->label('Harga Jualan Sebenar / Tan')
+                                            ->label('Harga Jualan Sebenar / Tan (RM)')
                                             ->numeric()
                                             ->prefix('RM')
-                                            ->placeholder('Isi jika berbeza dengan benchmark')
+                                            ->placeholder('Isi jika rundingan berbeza dgn benchmark')
                                             ->live(onBlur: true)
                                             ->afterStateUpdated(function ($state, Set $set, Get $get) {
                                                 $benchmark = (float) $get('benchmark_price_per_ton');
-                                                if ($state && (float)$state < $benchmark) {
+                                                if ($state && (float) $state < $benchmark) {
                                                     $set('approval_status', 'Pending Approval');
                                                 } else {
                                                     $set('approval_status', 'Approved');
@@ -198,19 +197,21 @@ class StCostingResource extends Resource
                                             ->default('Approved')
                                             ->readOnly()
                                             ->extraInputAttributes(fn (Get $get) => [
-                                                'class' => $get('approval_status') === 'Pending Approval' ? 'text-amber-400 font-bold' : 'text-emerald-400 font-bold',
+                                                'class' => $get('approval_status') === 'Pending Approval' 
+                                                    ? 'text-amber-400 font-bold' 
+                                                    : 'text-emerald-400 font-bold',
                                             ]),
                                     ]),
 
                                     Textarea::make('down_value_reason')
-                                        ->label('Justifikasi Penurunan Harga (Down-Value Justification)')
+                                        ->label('Justifikasi Penurunan Harga (Wajib jika bawah benchmark)')
                                         ->visible(fn (Get $get) => $get('approval_status') === 'Pending Approval')
                                         ->required(fn (Get $get) => $get('approval_status') === 'Pending Approval')
                                         ->columnSpanFull(),
                                 ]),
 
-                            // 4. PECAHAN GRED AKHIR
-                            Section::make('4. Pecahan Kos Mengikut Gred (Grade Breakdown)')
+                            // 4. PECAHAN GRED KAYU
+                            Section::make('4. Pecahan Kos Akhir Mengikut Gred (Grade Breakdown)')
                                 ->icon('heroicon-o-squares-2x2')
                                 ->schema([
                                     Repeater::make('gradeBreakdowns')
@@ -220,48 +221,53 @@ class StCostingResource extends Resource
                                                 ->label('Gred Kayu')
                                                 ->relationship('grade', 'name')
                                                 ->required()
-                                                ->columnSpan(2),
+                                                ->columnSpan(6),
+
                                             TextInput::make('cost_per_ton')
-                                                ->label('Kos Akhir Gred / Tan (RM)')
+                                                ->label('Kos Akhir Gred (RM/Tan)')
                                                 ->numeric()
                                                 ->prefix('RM')
                                                 ->required()
-                                                ->columnSpan(2),
+                                                ->columnSpan(6),
                                         ])
-                                        ->columns(4)
-                                        ->addActionLabel('+ Tambah Gred Kayu'),
+                                        ->columns(12)
+                                        ->addActionLabel('+ Tambah Pecahan Gred'),
                                 ]),
                         ]),
 
                         // =========================================================================
-                        // LAJUR KANAN: EXECUTIVE SUMMARY & BENCHMARK (1/3 SKRIN)
+                        // BAHAGIAN RINGKASAN: KAD PENGIRAAN DINAMIK (4 / 12 KOLUM)
                         // =========================================================================
-                        Grid::make(1)->columnSpan(['lg' => 1])->schema([
+                        Grid::make(1)->columnSpan(['xl' => 4])->schema([
                             Section::make('Ringkasan Kos & Benchmark')
+                                ->description('Kiraan masa nyata berpusat.')
                                 ->icon('heroicon-o-calculator')
-                                ->description('Kiraan automatik berpusat.')
                                 ->schema([
                                     TextInput::make('log_cost_per_ton')
-                                        ->label('Purata Kos Balak')
+                                        ->label('Purata Kos Balak / Tan')
                                         ->numeric()
                                         ->prefix('RM')
                                         ->default(0.00)
-                                        ->readOnly(),
+                                        ->readOnly()
+                                        ->extraInputAttributes(['class' => 'font-semibold text-slate-200']),
 
                                     TextInput::make('manufacturing_cost_per_ton')
                                         ->label('Kos Pembuatan (129 COA)')
+                                        ->helperText('Boleh ditaip manual atau dijana dari 129 COA.')
                                         ->numeric()
                                         ->prefix('RM')
-                                        ->default(fn () => number_format(
-                                            CoaItem::whereNotIn('cost_type', ['Summary', 'Balance'])->sum('standard_rate_per_ton'),
-                                            2, '.', ''
-                                        ))
-                                        ->readOnly()
+                                        ->default(function () {
+                                            $total = CoaItem::whereNotIn('cost_type', ['Summary', 'Balance'])->sum('standard_rate_per_ton');
+                                            // Jika pangkalan data COA masih 0, guna nilai default piawai industri (RM 177.00)
+                                            return $total > 0 ? number_format($total, 2, '.', '') : '177.00';
+                                        })
+                                        ->live(onBlur: true)
+                                        ->afterStateUpdated(fn ($livewire) => self::recalculateTotals($livewire))
                                         ->suffixAction(
                                             FormAction::make('viewCoaDetails')
                                                 ->label('Drill-Down')
                                                 ->icon('heroicon-m-table-cells')
-                                                ->modalHeading('Pecahan 129 Kod Akaun Pembuatan')
+                                                ->modalHeading('Perincian 129 Kod Akaun Pembuatan')
                                                 ->modalSubmitAction(false)
                                                 ->modalContent(fn () => view('filament.modals.coa-breakdown-table', [
                                                     'coas' => CoaItem::all(),
@@ -270,13 +276,15 @@ class StCostingResource extends Resource
 
                                     TextInput::make('total_base_cost_per_ton')
                                         ->label('Total Base Cost / Tan')
+                                        ->helperText('Purata Balak + Kos Pembuatan')
                                         ->numeric()
                                         ->prefix('RM')
                                         ->default(0.00)
                                         ->readOnly(),
 
                                     TextInput::make('adjusted_cost_per_ton')
-                                        ->label('Adjusted Cost / Tan (Siap KD)')
+                                        ->label('Adjusted Cost / Tan')
+                                        ->helperText('Termasuk caj proses KD & Potong')
                                         ->numeric()
                                         ->prefix('RM')
                                         ->default(0.00)
@@ -284,11 +292,14 @@ class StCostingResource extends Resource
 
                                     TextInput::make('benchmark_price_per_ton')
                                         ->label('Harga Benchmark Sasaran')
+                                        ->helperText('Garis panduan harga jualan minimum')
                                         ->numeric()
                                         ->prefix('RM')
                                         ->default(0.00)
                                         ->readOnly()
-                                        ->extraInputAttributes(['class' => 'font-bold text-emerald-400 text-lg']),
+                                        ->extraInputAttributes([
+                                            'class' => 'font-bold text-emerald-400 text-xl border-emerald-500/50 bg-emerald-950/20'
+                                        ]),
                                 ]),
                         ]),
                     ]),
@@ -312,13 +323,11 @@ class StCostingResource extends Resource
         }
 
         $avgLogCost = $totalVolume > 0 ? ($totalCost / $totalVolume) : 0;
-        $livewire->form->fill([
-            ...$data,
-            'log_cost_per_ton' => number_format($avgLogCost, 2, '.', ''),
-        ]);
 
-        // 2. Base Manufacturing Cost
-        $mfgCost = (float) ($data['manufacturing_cost_per_ton'] ?? CoaItem::whereNotIn('cost_type', ['Summary', 'Balance'])->sum('standard_rate_per_ton'));
+        // 2. Kos Pembuatan
+        $mfgCost = isset($data['manufacturing_cost_per_ton']) && is_numeric($data['manufacturing_cost_per_ton'])
+            ? (float) $data['manufacturing_cost_per_ton']
+            : 177.00;
 
         // 3. Total Base Cost
         $totalBase = $avgLogCost + $mfgCost;
@@ -328,7 +337,7 @@ class StCostingResource extends Resource
         $cutting = !empty($data['has_cutting']) ? (float) ($data['cutting_cost_per_ton'] ?? 0) : 0;
         $adjustedCost = $totalBase + $kd + $cutting;
 
-        // 5. Benchmark Price
+        // 5. Margin Benchmark
         $marginPct = (float) ($data['target_margin_percentage'] ?? 15) / 100;
         $marketType = $data['market_type'] ?? 'Local';
 
@@ -338,11 +347,18 @@ class StCostingResource extends Resource
             $benchmark = $adjustedCost * (1 + $marginPct);
         }
 
-        // Kemas kini state form secara serentak
+        // Tulis semula ke form
         $data['log_cost_per_ton'] = number_format($avgLogCost, 2, '.', '');
+        $data['manufacturing_cost_per_ton'] = number_format($mfgCost, 2, '.', '');
         $data['total_base_cost_per_ton'] = number_format($totalBase, 2, '.', '');
         $data['adjusted_cost_per_ton'] = number_format($adjustedCost, 2, '.', '');
         $data['benchmark_price_per_ton'] = number_format($benchmark, 2, '.', '');
+
+        // Semakan kelulusan jika harga jualan sebenar wujud
+        if (!empty($data['actual_selling_price_per_ton'])) {
+            $actual = (float) $data['actual_selling_price_per_ton'];
+            $data['approval_status'] = ($actual < $benchmark) ? 'Pending Approval' : 'Approved';
+        }
 
         $livewire->form->fill($data);
     }
@@ -350,6 +366,8 @@ class StCostingResource extends Resource
     public static function table(Table $table): Table
     {
         return $table
+            ->paginationPageOptions([10, 25, 50, 100])
+            ->defaultPaginationPageOption(25)
             ->columns([
                 TextColumn::make('id')->label('ID')->sortable(),
                 TextColumn::make('total_base_cost_per_ton')->label('Base Cost (RM)')->money('MYR')->sortable(),
