@@ -56,7 +56,7 @@ class StCostingResource extends Resource
                                                 ->columnSpan(['default' => 12, 'md' => 2]),
 
                                             Select::make('species_id')
-                                                ->label('Spesies Balak')
+                                                ->label('Spesies Kayu')
                                                 ->relationship('species', 'name')
                                                 ->searchable()
                                                 ->preload()
@@ -78,7 +78,7 @@ class StCostingResource extends Resource
                                                 ->columnSpan(['default' => 6, 'md' => 3]),
 
                                             TextInput::make('log_cost_per_ton')
-                                                ->label('Kos Balak (RM/Tan)')
+                                                ->label('Kos Kayu (RM/Tan)')
                                                 ->numeric()
                                                 ->prefix('RM')
                                                 ->live(onBlur: true)
