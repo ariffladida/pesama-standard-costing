@@ -45,7 +45,7 @@ class MouldingCostingResource extends Resource
                             
                             // 1. MAKLUMAT SPESIFIKASI PRODUK & SAIZ TETAP
                             Section::make('1. Spesifikasi Produk Profil Moulding')
-                                ->description('Penetapan sumber bahan mentah dan saiz profil standard kilang.')
+                                ->description('Penetapan punca bahan mentah dan saiz profil standard.')
                                 ->icon('heroicon-o-tag')
                                 ->schema([
                                     Grid::make(2)->schema([
@@ -62,13 +62,8 @@ class MouldingCostingResource extends Resource
                                         Select::make('profile_size')
                                             ->label('Saiz Profil Tetap (Fixed Profile Size)')
                                             ->options([
-                                                '1" x 2" (Standard Batten)'      => '1" x 2" (Standard Batten)',
-                                                '1" x 3" (Architrave / Skirting)' => '1" x 3" (Architrave / Skirting)',
-                                                '1" x 4" (Tongue & Groove - T&G)' => '1" x 4" (Tongue & Groove - T&G)',
-                                                '1" x 5" (Floor Decking)'        => '1" x 5" (Floor Decking)',
-                                                '1" x 6" (S4S / E4E Premium)'    => '1" x 6" (S4S / E4E Premium)',
-                                                '2" x 2" (Handrail Core)'        => '2" x 2" (Handrail Core)',
-                                                '2" x 4" (Door Jamb Frame)'      => '2" x 4" (Door Jamb Frame)',
+                                                '1-1/4" x 5-1/2" (28mm x 133mm)' => '1-1/4" x 5-1/2" (28mm x 133mm)',
+                                                '1-1/4" x 6" (28mm x 145mm)'     => '1-1/4" x 6" (28mm x 145mm)',
                                             ])
                                             ->searchable()
                                             ->preload()
@@ -135,7 +130,7 @@ class MouldingCostingResource extends Resource
                                         ->afterStateUpdated(fn ($livewire) => self::recalculateTotals($livewire)),
                                 ]),
 
-                            // 3. RAWATAN & SURCHARGE
+                            // 3. RAWATAN & PROSES TAMBAHAN
                             Section::make('3. Proses Tambahan Moulding')
                                 ->icon('heroicon-o-wrench-screwdriver')
                                 ->schema([
