@@ -252,10 +252,11 @@ class MouldingCostingResource extends Resource
                                             FormAction::make('viewCoaDetails')
                                                 ->label('Drill-Down')
                                                 ->icon('heroicon-m-table-cells')
-                                                ->modalHeading('Perincian Kod Akaun Pembuatan (Moulding & FJ)')
+                                                ->modalHeading('Pesama Timber Corporation - Standard Costing Sheet (Moulding & FJ)')
+                                                ->modalWidth('7xl')
                                                 ->modalSubmitAction(false)
                                                 ->modalContent(fn () => view('filament.modals.coa-breakdown-table', [
-                                                    'coas' => CoaItem::where('product_type', 'Moulding_FJ')->get(),
+                                                    'coas' => CoaItem::where('product_type', 'Moulding_FJ')->orderBy('id', 'asc')->get(),
                                                 ]))
                                         ),
 
