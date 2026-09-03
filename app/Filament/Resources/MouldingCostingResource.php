@@ -236,13 +236,15 @@ class MouldingCostingResource extends Resource
                                         ->extraInputAttributes(['class' => 'font-semibold text-slate-200']),
 
                                     TextInput::make('manufacturing_cost_per_ton')
-                                        ->label('Kos Pembuatan (129 COA)')
-                                        ->helperText('Boleh ditaip manual atau dijana dari 129 COA.')
+                                        ->label('Kos Pembuatan (COA Moulding/FJ)')
+                                        ->helperText('Berdasarkan 81 kod akaun loji sekunder.')
                                         ->numeric()
                                         ->prefix('RM')
                                         ->default(function () {
-                                            $total = CoaItem::whereNotIn('cost_type', ['Summary', 'Balance'])->sum('standard_rate_per_ton');
-                                            return $total > 0 ? number_format($total, 2, '.', '') : '177.00';
+                                            $total = CoaItem::where('product_type', 'Moulding_FJ')
+                                                ->whereNotIn('cost_type', ['Summary', 'Balance'])
+                                                ->sum('standard_rate_per_ton');
+                                            return $total > 0 ? number_format($total, 2, '.', '') : '346.37';
                                         })
                                         ->live(onBlur: true)
                                         ->afterStateUpdated(fn ($livewire) => self::recalculateTotals($livewire))
@@ -250,10 +252,10 @@ class MouldingCostingResource extends Resource
                                             FormAction::make('viewCoaDetails')
                                                 ->label('Drill-Down')
                                                 ->icon('heroicon-m-table-cells')
-                                                ->modalHeading('Perincian 129 Kod Akaun Pembuatan')
+                                                ->modalHeading('Perincian Kod Akaun Pembuatan (Moulding & FJ)')
                                                 ->modalSubmitAction(false)
                                                 ->modalContent(fn () => view('filament.modals.coa-breakdown-table', [
-                                                    'coas' => CoaItem::all(),
+                                                    'coas' => CoaItem::where('product_type', 'Moulding_FJ')->get(),
                                                 ]))
                                         ),
 
@@ -299,12 +301,12 @@ class MouldingCostingResource extends Resource
 
         $avgRawCost = $totalVolume > 0 ? ($totalCost / $totalVolume) : 0;
 
-        // 2. Kos Pembuatan (COA)
+        // 2. Kos Pembuatan (COA Moulding & FJ)
         $mfgCost = isset($data['manufacturing_cost_per_ton']) && is_numeric($data['manufacturing_cost_per_ton'])
             ? (float) $data['manufacturing_cost_per_ton']
-            : 177.00;
+            : (float) (CoaItem::where('product_type', 'Moulding_FJ')->whereNotIn('cost_type', ['Summary', 'Balance'])->sum('standard_rate_per_ton') ?: 346.37);
 
-        // 3. Caj Tambahan
+        // 3. Caj Tambahan (Sanding)
         $sanding = !empty($data['has_sanding']) ? (float) ($data['sanding_cost_per_ton'] ?? 0) : 0;
 
         // 4. Total Cost
