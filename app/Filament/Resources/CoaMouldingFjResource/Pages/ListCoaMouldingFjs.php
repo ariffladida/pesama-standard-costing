@@ -7,6 +7,7 @@ use App\Models\CoaItem;
 use Filament\Actions;
 use Filament\Resources\Pages\ListRecords;
 use Illuminate\Contracts\View\View;
+use Illuminate\Support\Facades\Schema;
 
 class ListCoaMouldingFjs extends ListRecords
 {
@@ -21,13 +22,17 @@ class ListCoaMouldingFjs extends ListRecords
 
     public function getHeader(): ?View
     {
+        $hasTotalCost = Schema::hasColumn('coa_items', 'total_cost');
+
         $mfgTotalRate = CoaItem::where('product_type', 'Moulding_FJ')
             ->whereNotIn('cost_type', ['Summary', 'Balance'])
             ->sum('standard_rate_per_ton');
 
-        $mfgTotalCost = CoaItem::where('product_type', 'Moulding_FJ')
-            ->whereNotIn('cost_type', ['Summary', 'Balance'])
-            ->sum('total_cost');
+        $mfgTotalCost = $hasTotalCost
+            ? CoaItem::where('product_type', 'Moulding_FJ')
+                ->whereNotIn('cost_type', ['Summary', 'Balance'])
+                ->sum('total_cost')
+            : 0.00;
 
         return view('filament.components.excel-coa-header', [
             'company'          => 'Pesama Timber Corporation Sdn. Bhd.',
