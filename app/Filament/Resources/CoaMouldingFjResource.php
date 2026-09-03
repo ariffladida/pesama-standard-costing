@@ -10,23 +10,25 @@ use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
 use Filament\Tables\Columns\TextColumn;
-use Filament\Tables\Columns\IconColumn;
+use Filament\Tables\Columns\TextInputColumn;
 use Illuminate\Database\Eloquent\Builder;
 
 class CoaMouldingFjResource extends Resource
 {
     protected static ?string $model = CoaItem::class;
 
-    protected static ?string $navigationIcon = 'heroicon-o-cube-transparent';
+    protected static ?string $navigationIcon = 'heroicon-o-document-text';
     protected static ?string $navigationGroup = 'Master Data';
-    protected static ?string $navigationLabel = 'COA: Secondary Plant (Moulding & FJ)';
-    protected static ?string $modelLabel = 'COA Secondary Plant';
-    protected static ?string $pluralModelLabel = 'COA: Secondary Plant (Moulding & FJ)';
+    protected static ?string $navigationLabel = 'COA: Moulding & FJ (Excel)';
+    protected static ?string $modelLabel = 'Item Akaun';
+    protected static ?string $pluralModelLabel = 'Helaian Standard Costing (Moulding & FJ)';
     protected static ?int $navigationSort = 2;
 
     public static function getEloquentQuery(): Builder
     {
-        return parent::getEloquentQuery()->where('product_type', 'Moulding_FJ');
+        return parent::getEloquentQuery()
+            ->where('product_type', 'Moulding_FJ')
+            ->orderBy('id', 'asc');
     }
 
     public static function form(Form $form): Form
@@ -34,92 +36,105 @@ class CoaMouldingFjResource extends Resource
         return $form
             ->schema([
                 Forms\Components\TextInput::make('coa_code')
-                    ->label('Kod Akaun Secondary (Moulding/FJ)')
-                    ->placeholder('Cth: SEC-5001 / MLD-01')
+                    ->label('Acc. No.')
                     ->required()
                     ->unique(ignoreRecord: true),
 
                 Forms\Components\TextInput::make('name')
-                    ->label('Keterangan Akaun (Description)')
-                    ->placeholder('Cth: DIRECT LABOUR - MOULDING PLANT')
-                    ->required(),
+                    ->label('Description')
+                    ->required()
+                    ->columnSpan(2),
 
                 Forms\Components\Select::make('cost_type')
-                    ->label('Klasifikasi Kos')
+                    ->label('Category')
                     ->options([
-                        'Fixed' => 'Kos Tetap (Fixed Cost)',
-                        'Variable' => 'Kos Berubah (Variable Cost)',
-                        'Summary' => 'Header / Subtotal',
-                        'Balance' => 'Stok / Baki',
+                        'Variable overhead' => 'Variable overhead',
+                        'Fixed overhead'    => 'Fixed overhead',
+                        'Raw material'      => 'Raw material',
+                        'Stock'             => 'Stock',
                     ])
-                    ->required(),
-
-                Forms\Components\Select::make('basis_type')
-                    ->label('Asas Penetapan')
-                    ->options([
-                        'Contract' => 'Kadar Kontrak Tetap',
-                        'Historical' => 'Data Sejarah / Formula',
-                        'Summary' => 'Kiraan Ringkasan',
-                    ])
-                    ->required(),
+                    ->nullable(),
 
                 Forms\Components\TextInput::make('standard_rate_per_ton')
-                    ->label('Kadar Standard / Tan (RM)')
+                    ->label('Cost/ton (RM)')
                     ->numeric()
                     ->prefix('RM')
                     ->default(0.00),
 
-                Forms\Components\Toggle::make('is_reducible')
-                    ->label('Boleh Dikurangkan (Fleksibel)')
-                    ->default(true),
-            ])->columns(2);
+                Forms\Components\TextInput::make('total_cost')
+                    ->label('Total cost (RM)')
+                    ->numeric()
+                    ->prefix('RM')
+                    ->default(0.00),
+            ])->columns(3);
     }
 
     public static function table(Table $table): Table
     {
         return $table
-            ->paginationPageOptions([10, 25, 50, 100, 'all'])
-            ->defaultPaginationPageOption(25)
+            ->paginationPageOptions([25, 50, 100, 'all'])
+            ->defaultPaginationPageOption(100)
             ->columns([
+                // 1. Acc. No.
                 TextColumn::make('coa_code')
-                    ->label('Kod Akaun')
+                    ->label('Acc. No.')
                     ->sortable()
                     ->searchable()
-                    ->badge(),
+                    ->extraAttributes(fn ($record) => [
+                        'class' => empty($record->cost_type) 
+                            ? 'font-extrabold text-amber-300 tracking-wider' 
+                            : 'font-mono text-slate-300 font-semibold',
+                    ]),
+
+                // 2. Description
                 TextColumn::make('name')
-                    ->label('Keterangan Akaun')
+                    ->label('Description')
                     ->searchable()
-                    ->wrap(),
+                    ->wrap()
+                    ->extraAttributes(fn ($record) => [
+                        'class' => empty($record->cost_type) 
+                            ? 'font-extrabold text-white uppercase text-sm' 
+                            : 'text-slate-200',
+                    ]),
+
+                // 3. Category
                 TextColumn::make('cost_type')
-                    ->label('Klasifikasi')
+                    ->label('Category')
                     ->badge()
-                    ->color(fn (string $state): string => match ($state) {
-                        'Fixed' => 'info',
-                        'Variable' => 'warning',
-                        'Summary' => 'gray',
-                        default => 'secondary',
-                    }),
-                TextColumn::make('basis_type')
-                    ->label('Asas')
-                    ->badge(),
-                TextColumn::make('standard_rate_per_ton')
-                    ->label('Kadar Std / Tan')
-                    ->money('MYR')
-                    ->sortable(),
-                IconColumn::make('is_reducible')
-                    ->label('Fleksibel')
-                    ->boolean(),
+                    ->color(fn (?string $state): string => match ($state) {
+                        'Variable overhead' => 'warning',
+                        'Fixed overhead'    => 'info',
+                        'Raw material'      => 'success',
+                        'Stock'             => 'danger',
+                        default             => 'gray',
+                    })
+                    ->placeholder('--'),
+
+                // 4. Cost/ton (RM)
+                TextInputColumn::make('standard_rate_per_ton')
+                    ->label('Cost/ton (RM)')
+                    ->rules(['numeric', 'min:0'])
+                    ->alignEnd(),
+
+                // 5. Total cost (RM)
+                TextInputColumn::make('total_cost')
+                    ->label('Total cost (RM)')
+                    ->rules(['numeric', 'min:0'])
+                    ->alignEnd(),
             ])
             ->filters([
                 Tables\Filters\SelectFilter::make('cost_type')
+                    ->label('Category')
                     ->options([
-                        'Fixed' => 'Fixed Cost',
-                        'Variable' => 'Variable Cost',
+                        'Variable overhead' => 'Variable overhead',
+                        'Fixed overhead'    => 'Fixed overhead',
+                        'Raw material'      => 'Raw material',
+                        'Stock'             => 'Stock',
                     ]),
             ])
             ->actions([
-                Tables\Actions\EditAction::make(),
-                Tables\Actions\DeleteAction::make(),
+                Tables\Actions\EditAction::make()->iconButton(),
+                Tables\Actions\DeleteAction::make()->iconButton(),
             ]);
     }
 

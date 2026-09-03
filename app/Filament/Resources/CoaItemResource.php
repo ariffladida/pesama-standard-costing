@@ -14,10 +14,17 @@ use Filament\Tables\Columns\IconColumn;
 
 class CoaItemResource extends Resource
 {
-    protected static ?string $model = CoaItem::class;
-    protected static ?string $navigationIcon = 'heroicon-o-calculator';
+   protected static ?string $navigationIcon = 'heroicon-o-calculator';
     protected static ?string $navigationGroup = 'Master Data';
-    protected static ?string $navigationLabel = 'Carta Akaun (129 COA)';
+    protected static ?string $navigationLabel = 'COA: Sawmill (Loji Belah)';
+    protected static ?string $modelLabel = 'COA Sawmill';
+    protected static ?string $pluralModelLabel = 'COA: Sawmill (Loji Belah)';
+    protected static ?int $navigationSort = 1;
+
+    public static function getEloquentQuery(): \Illuminate\Database\Eloquent\Builder
+    {
+        return parent::getEloquentQuery()->where('product_type', 'Sawmill');
+    }
 
     public static function form(Form $form): Form
     {
