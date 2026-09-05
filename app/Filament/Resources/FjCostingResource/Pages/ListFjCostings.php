@@ -13,7 +13,12 @@ class ListFjCostings extends ListRecords
     protected function getHeaderActions(): array
     {
         return [
-            Actions\CreateAction::make(),
+            Actions\CreateAction::make()->label('+ Kira Kos FJ Baharu'),
         ];
+    }
+
+    protected function queryString(): array
+    {
+        return [];
     }
 }
