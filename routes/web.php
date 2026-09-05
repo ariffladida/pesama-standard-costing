@@ -1,22 +1,28 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
+use Illuminate\Support\Facades\Artisan;
+use Illuminate\Support\Facades\Schema;
 
 Route::get('/', function () {
     return view('welcome');
 });
 
-use Illuminate\Support\Facades\Artisan;
-
 Route::get('/run-emergency-migrate', function () {
-    Artisan::call('migrate', ['--force' => true]);
-    $migrateOutput = Artisan::output();
+    try {
+        Artisan::call('migrate', ['--force' => true]);
+        $migrateOutput = Artisan::output();
+    } catch (\Throwable $e) {
+        $migrateOutput = 'Error: ' . $e->getMessage();
+    }
 
-    Artisan::call('db:seed', [
-        '--class' => 'CoaMouldingFjSeeder',
-        '--force' => true,
-    ]);
-    $seedOutput = Artisan::output();
+    $fjCostingsExists = Schema::hasTable('fj_costings');
+    $fjCostingItemsExists = Schema::hasTable('fj_costing_items');
 
-    return '<pre>--- MIGRATE OUTPUT ---' . PHP_EOL . $migrateOutput . PHP_EOL . PHP_EOL . '--- SEED OUTPUT ---' . PHP_EOL . $seedOutput . '</pre>';
+    return '<pre>' .
+        '--- MIGRATE OUTPUT ---' . PHP_EOL . $migrateOutput . PHP_EOL . PHP_EOL .
+        '--- STATUS JADUAL ---' . PHP_EOL .
+        'fj_costings: ' . ($fjCostingsExists ? 'Wujud (OK)' : 'Tiada') . PHP_EOL .
+        'fj_costing_items: ' . ($fjCostingItemsExists ? 'Wujud (OK)' : 'Tiada') .
+        '</pre>';
 });
