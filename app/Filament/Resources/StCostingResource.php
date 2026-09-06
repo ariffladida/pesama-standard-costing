@@ -22,6 +22,8 @@ use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
 use Filament\Tables\Columns\TextColumn;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 
 class StCostingResource extends Resource
 {
@@ -29,6 +31,48 @@ class StCostingResource extends Resource
     protected static ?string $navigationIcon = 'heroicon-o-table-cells';
     protected static ?string $navigationGroup = 'Standard Costing';
     protected static ?string $navigationLabel = 'Sawn Timber';
+
+    /**
+     * Dapatkan koleksi COA Sawmill secara dinamik daripada model atau jadual terus.
+     */
+    public static function getSawmillCoaCollection()
+    {
+        if (class_exists(\App\Models\CoaSawmill::class)) {
+            $data = \App\Models\CoaSawmill::orderBy('id', 'asc')->get();
+            if ($data->isNotEmpty()) return $data;
+        }
+
+        if (Schema::hasTable('coa_sawmills')) {
+            $data = DB::table('coa_sawmills')->orderBy('id', 'asc')->get();
+            if ($data->isNotEmpty()) return $data;
+        }
+
+        if (class_exists(\App\Models\SawmillCoa::class)) {
+            $data = \App\Models\SawmillCoa::orderBy('id', 'asc')->get();
+            if ($data->isNotEmpty()) return $data;
+        }
+
+        return CoaItem::where('product_type', 'Sawmill')->orderBy('id', 'asc')->get();
+    }
+
+    /**
+     * Kira jumlah kos pembuatan standard Sawmill (menolak akaun Summary/Balance).
+     */
+    public static function calculateDefaultSawmillMfgCost(): float
+    {
+        $coas = self::getSawmillCoaCollection();
+
+        $filtered = $coas->reject(function ($item) {
+            $cat = strtolower($item->classification ?? $item->klasifikasi ?? $item->category ?? $item->cost_type ?? '');
+            return str_contains($cat, 'summary') || str_contains($cat, 'balance');
+        });
+
+        $sum = $filtered->sum(function ($item) {
+            return (float) ($item->standard_rate_per_ton ?? $item->rate_per_ton ?? $item->standard_rate ?? $item->rate ?? 0);
+        });
+
+        return $sum > 0 ? (float) $sum : 282.80;
+    }
 
     public static function form(Form $form): Form
     {
@@ -40,7 +84,7 @@ class StCostingResource extends Resource
                         // BAHAGIAN UTAMA: ALIRAN KERJA INPUT PEGAWAI (8 / 12 KOLUM)
                         // =========================================================================
                         Grid::make(1)->columnSpan(['xl' => 8])->schema([
-                            
+
                             // 1. INPUT BALAK & SPESIES
                             Section::make('1. Campuran Balak Mentah (Log Intake)')
                                 ->description('Kemasukan batch dan kos belian balak untuk purata wajaran kos.')
@@ -197,8 +241,8 @@ class StCostingResource extends Resource
                                             ->default('Approved')
                                             ->readOnly()
                                             ->extraInputAttributes(fn (Get $get) => [
-                                                'class' => $get('approval_status') === 'Pending Approval' 
-                                                    ? 'text-amber-400 font-bold' 
+                                                'class' => $get('approval_status') === 'Pending Approval'
+                                                    ? 'text-amber-400 font-bold'
                                                     : 'text-emerald-400 font-bold',
                                             ]),
                                     ]),
@@ -253,16 +297,10 @@ class StCostingResource extends Resource
 
                                     TextInput::make('manufacturing_cost_per_ton')
                                         ->label('Kos Pembuatan (129 COA Sawmill)')
-                                        ->helperText('Berdasarkan 129 kod akaun operasi Sawmill.')
+                                        ->helperText('Berdasarkan senarai 129 akaun Sawmill.')
                                         ->numeric()
                                         ->prefix('RM')
-                                        ->default(function () {
-                                            $total = CoaItem::where('product_type', 'Sawmill')
-                                                ->whereNotIn('cost_type', ['Summary', 'Balance'])
-                                                ->sum('standard_rate_per_ton');
-
-                                            return $total > 0 ? number_format($total, 2, '.', '') : '282.80';
-                                        })
+                                        ->default(fn () => number_format(self::calculateDefaultSawmillMfgCost(), 2, '.', ''))
                                         ->live(onBlur: true)
                                         ->afterStateUpdated(fn ($livewire) => self::recalculateTotals($livewire))
                                         ->suffixAction(
@@ -273,7 +311,7 @@ class StCostingResource extends Resource
                                                 ->modalWidth('7xl')
                                                 ->modalSubmitAction(false)
                                                 ->modalContent(fn () => view('filament.modals.sawmill-coa-breakdown-table', [
-                                                    'coas' => CoaItem::where('product_type', 'Sawmill')->orderBy('id', 'asc')->get(),
+                                                    'coas' => self::getSawmillCoaCollection(),
                                                 ]))
                                         ),
 
@@ -327,10 +365,10 @@ class StCostingResource extends Resource
 
         $avgLogCost = $totalVolume > 0 ? ($totalCost / $totalVolume) : 0;
 
-        // 2. Kos Pembuatan
-        $mfgCost = isset($data['manufacturing_cost_per_ton']) && is_numeric($data['manufacturing_cost_per_ton'])
-        ? (float) $data['manufacturing_cost_per_ton']
-        : (float) (CoaItem::where('product_type', 'Sawmill')->whereNotIn('cost_type', ['Summary', 'Balance'])->sum('standard_rate_per_ton') ?: 282.80);
+        // 2. Kos Pembuatan Sawmill (COA)
+        $mfgCost = isset($data['manufacturing_cost_per_ton']) && is_numeric($data['manufacturing_cost_per_ton']) && (float) $data['manufacturing_cost_per_ton'] > 0
+            ? (float) $data['manufacturing_cost_per_ton']
+            : self::calculateDefaultSawmillMfgCost();
 
         // 3. Total Base Cost
         $totalBase = $avgLogCost + $mfgCost;
@@ -357,7 +395,6 @@ class StCostingResource extends Resource
         $data['adjusted_cost_per_ton'] = number_format($adjustedCost, 2, '.', '');
         $data['benchmark_price_per_ton'] = number_format($benchmark, 2, '.', '');
 
-        // Semakan kelulusan jika harga jualan sebenar wujud
         if (!empty($data['actual_selling_price_per_ton'])) {
             $actual = (float) $data['actual_selling_price_per_ton'];
             $data['approval_status'] = ($actual < $benchmark) ? 'Pending Approval' : 'Approved';
