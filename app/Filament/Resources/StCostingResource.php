@@ -37,17 +37,24 @@ class StCostingResource extends Resource
 
     public static function calculateSawmillMfgCost(): float
     {
-        $sum = CoaItem::where('product_type', 'Sawmill')
-            ->whereNotIn('cost_type', ['Summary', 'Balance'])
-            ->sum('standard_rate_per_ton');
+        $coas = self::getSawmillCoas();
 
-        if ($sum <= 0) {
-            $sum = CoaItem::where('product_type', 'Sawmill')
-                ->whereNotIn('cost_type', ['Summary', 'Balance'])
-                ->sum('rate');
+        if ($coas->isEmpty()) {
+            return 282.80;
         }
 
-        return $sum > 0 ? (float) $sum : 282.80;
+        // Tapis akaun Summary & Balance
+        $activeCoas = $coas->reject(function ($item) {
+            $cat = strtolower($item->cost_type ?? $item->classification ?? '');
+            return str_contains($cat, 'summary') || str_contains($cat, 'balance');
+        });
+
+        // Ambil kadar daripada standard_rate_per_ton atau rate atau atribut berkaitan
+        $total = $activeCoas->sum(function ($item) {
+            return (float) ($item->standard_rate_per_ton ?? $item->rate ?? $item->standard_rate ?? 0);
+        });
+
+        return $total > 0 ? (float) $total : 282.80;
     }
 
     public static function form(Form $form): Form
@@ -235,7 +242,7 @@ class StCostingResource extends Resource
                                 ->icon('heroicon-o-squares-2x2')
                                 ->schema([
                                     Repeater::make('gradeBreakdowns')
-                                        ->relationship()
+                                        ->relationship('gradeBreakdowns')
                                         ->schema([
                                             Select::make('grade_id')
                                                 ->label('Gred Kayu')
