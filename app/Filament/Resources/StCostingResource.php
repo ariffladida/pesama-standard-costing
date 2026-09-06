@@ -252,25 +252,28 @@ class StCostingResource extends Resource
                                         ->extraInputAttributes(['class' => 'font-semibold text-slate-200']),
 
                                     TextInput::make('manufacturing_cost_per_ton')
-                                        ->label('Kos Pembuatan (129 COA)')
-                                        ->helperText('Boleh ditaip manual atau dijana dari 129 COA.')
+                                        ->label('Kos Pembuatan (129 COA Sawmill)')
+                                        ->helperText('Berdasarkan 129 kod akaun operasi Sawmill.')
                                         ->numeric()
                                         ->prefix('RM')
                                         ->default(function () {
-                                            $total = CoaItem::whereNotIn('cost_type', ['Summary', 'Balance'])->sum('standard_rate_per_ton');
-                                            // Jika pangkalan data COA masih 0, guna nilai default piawai industri (RM 177.00)
-                                            return $total > 0 ? number_format($total, 2, '.', '') : '177.00';
+                                            $total = CoaItem::where('product_type', 'Sawmill')
+                                                ->whereNotIn('cost_type', ['Summary', 'Balance'])
+                                                ->sum('standard_rate_per_ton');
+
+                                            return $total > 0 ? number_format($total, 2, '.', '') : '282.80';
                                         })
                                         ->live(onBlur: true)
                                         ->afterStateUpdated(fn ($livewire) => self::recalculateTotals($livewire))
                                         ->suffixAction(
-                                            FormAction::make('viewCoaDetails')
+                                            FormAction::make('viewSawmillCoaDetails')
                                                 ->label('Drill-Down')
                                                 ->icon('heroicon-m-table-cells')
-                                                ->modalHeading('Perincian 129 Kod Akaun Pembuatan')
+                                                ->modalHeading('Pesama Timber Corporation - Standard Costing Sheet (Sawmill 129 COA)')
+                                                ->modalWidth('7xl')
                                                 ->modalSubmitAction(false)
-                                                ->modalContent(fn () => view('filament.modals.coa-breakdown-table', [
-                                                    'coas' => CoaItem::all(),
+                                                ->modalContent(fn () => view('filament.modals.sawmill-coa-breakdown-table', [
+                                                    'coas' => CoaItem::where('product_type', 'Sawmill')->orderBy('id', 'asc')->get(),
                                                 ]))
                                         ),
 
@@ -326,8 +329,8 @@ class StCostingResource extends Resource
 
         // 2. Kos Pembuatan
         $mfgCost = isset($data['manufacturing_cost_per_ton']) && is_numeric($data['manufacturing_cost_per_ton'])
-            ? (float) $data['manufacturing_cost_per_ton']
-            : 177.00;
+        ? (float) $data['manufacturing_cost_per_ton']
+        : (float) (CoaItem::where('product_type', 'Sawmill')->whereNotIn('cost_type', ['Summary', 'Balance'])->sum('standard_rate_per_ton') ?: 282.80);
 
         // 3. Total Base Cost
         $totalBase = $avgLogCost + $mfgCost;
