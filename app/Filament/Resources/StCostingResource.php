@@ -37,18 +37,20 @@ class StCostingResource extends Resource
      */
     public static function getSawmillCoaCollection()
     {
-        if (class_exists(\App\Models\CoaSawmill::class)) {
-            $data = \App\Models\CoaSawmill::orderBy('id', 'asc')->get();
+        $coaSawmillClass = 'App\\Models\\CoaSawmill';
+        if (class_exists($coaSawmillClass)) {
+            $data = $coaSawmillClass::orderBy('id', 'asc')->get();
+            if ($data->isNotEmpty()) return $data;
+        }
+
+        $sawmillCoaClass = 'App\\Models\\SawmillCoa';
+        if (class_exists($sawmillCoaClass)) {
+            $data = $sawmillCoaClass::orderBy('id', 'asc')->get();
             if ($data->isNotEmpty()) return $data;
         }
 
         if (Schema::hasTable('coa_sawmills')) {
             $data = DB::table('coa_sawmills')->orderBy('id', 'asc')->get();
-            if ($data->isNotEmpty()) return $data;
-        }
-
-        if (class_exists(\App\Models\SawmillCoa::class)) {
-            $data = \App\Models\SawmillCoa::orderBy('id', 'asc')->get();
             if ($data->isNotEmpty()) return $data;
         }
 
