@@ -40,7 +40,10 @@ RUN mkdir -p /var/www/storage/framework/sessions \
     && chown -R www-data:www-data /var/www/storage /var/www/bootstrap/cache \
     && chmod -R 775 /var/www/storage /var/www/bootstrap/cache
 
-EXPOSE 80
+# Beri kebenaran eksekusi untuk skrip start.sh
+RUN chmod +x /var/www/start.sh
 
-# Mulakan PHP-FPM dan Nginx
-CMD php-fpm -D && nginx -g "daemon off;"
+EXPOSE 80 10000
+
+# Jalankan skrip permulaan
+CMD ["/var/www/start.sh"]
