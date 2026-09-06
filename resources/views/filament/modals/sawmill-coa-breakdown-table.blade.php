@@ -13,7 +13,7 @@
     <div class="mb-4 pb-3 border-b border-slate-800 flex justify-between items-center">
         <div>
             <h2 class="text-sm font-bold tracking-wide text-white uppercase">Standard Costing Sheet — Sawmill (129 COA)</h2>
-            <p class="text-slate-400 text-[11px]">Diselaraskan terus daripada pangkalan data COA Master</p>
+            <p class="text-slate-400 text-[11px]">Diselaraskan terus daripada pangkalan data COA Items</p>
         </div>
         <div class="text-right">
             <span class="text-[11px] text-slate-400">Jumlah Kos Pembuatan Standard:</span>

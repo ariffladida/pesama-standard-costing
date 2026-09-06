@@ -38,7 +38,7 @@ class CoaItemResource extends Resource
             ->schema([
                 Section::make('Maklumat Kod Akaun Sawmill (129 Items)')
                     ->schema([
-                        TextInput::make('code')
+                        TextInput::make('coa_code')
                             ->label('Kod Akaun')
                             ->placeholder('e.g. 6000/000 atau 7100/001')
                             ->required(),
@@ -47,7 +47,7 @@ class CoaItemResource extends Resource
                             ->label('Keterangan')
                             ->required(),
 
-                        Select::make('classification')
+                        Select::make('cost_type')
                             ->label('Klasifikasi')
                             ->options([
                                 'Variable' => 'Variable',
@@ -58,14 +58,8 @@ class CoaItemResource extends Resource
                             ->default('Variable')
                             ->required(),
 
-                        Select::make('basis')
+                        TextInput::make('basis')
                             ->label('Asas')
-                            ->options([
-                                'Historical' => 'Historical',
-                                'Summary' => 'Summary',
-                                'Output' => 'Output',
-                                'Monthly Budget' => 'Monthly Budget',
-                            ])
                             ->default('Historical')
                             ->required(),
 
@@ -89,7 +83,7 @@ class CoaItemResource extends Resource
             ->paginationPageOptions([10, 25, 50, 100])
             ->defaultPaginationPageOption(50)
             ->columns([
-                TextColumn::make('code')
+                TextColumn::make('coa_code')
                     ->label('Kod Akaun')
                     ->searchable()
                     ->sortable(),
@@ -99,7 +93,7 @@ class CoaItemResource extends Resource
                     ->searchable()
                     ->wrap(),
 
-                TextColumn::make('classification')
+                TextColumn::make('cost_type')
                     ->label('Klasifikasi')
                     ->badge()
                     ->color(fn (string $state): string => match ($state) {
