@@ -58,11 +58,6 @@ class CoaItemResource extends Resource
                             ->default('Variable')
                             ->required(),
 
-                        TextInput::make('basis')
-                            ->label('Asas')
-                            ->default('Historical')
-                            ->required(),
-
                         TextInput::make('standard_rate_per_ton')
                             ->label('Kadar Std/Tan (RM)')
                             ->numeric()
@@ -102,11 +97,6 @@ class CoaItemResource extends Resource
                         'Summary', 'Balance' => 'gray',
                         default => 'gray',
                     }),
-
-                TextColumn::make('basis')
-                    ->label('Asas')
-                    ->badge()
-                    ->color('success'),
 
                 TextColumn::make('standard_rate_per_ton')
                     ->label('Kadar Std/Tan')

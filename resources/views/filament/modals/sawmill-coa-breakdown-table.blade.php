@@ -1,19 +1,19 @@
 <div class="overflow-x-auto max-h-[75vh] p-3 bg-slate-950 text-slate-100 rounded-lg border border-slate-800 text-xs">
     @php
         $activeItems = $coas->reject(function($item) {
-            $cat = strtolower($item->cost_type ?? $item->classification ?? '');
+            $cat = strtolower($item->cost_type ?? '');
             return str_contains($cat, 'summary') || str_contains($cat, 'balance');
         });
 
         $totalRate = $activeItems->sum(function($item) {
-            return (float) ($item->standard_rate_per_ton ?? $item->rate ?? 0);
+            return (float) ($item->standard_rate_per_ton ?? 0);
         });
     @endphp
 
     <div class="mb-4 pb-3 border-b border-slate-800 flex justify-between items-center">
         <div>
             <h2 class="text-sm font-bold tracking-wide text-white uppercase">Standard Costing Sheet — Sawmill (129 COA)</h2>
-            <p class="text-slate-400 text-[11px]">Diselaraskan terus daripada pangkalan data COA Items</p>
+            <p class="text-slate-400 text-[11px]">Diselaraskan terus daripada pangkalan data Master COA</p>
         </div>
         <div class="text-right">
             <span class="text-[11px] text-slate-400">Jumlah Kos Pembuatan Standard:</span>
@@ -35,10 +35,10 @@
         <tbody class="divide-y divide-slate-800/60 font-mono">
             @forelse($coas as $coa)
                 @php
-                    $code = $coa->coa_code ?? $coa->code ?? '-';
-                    $name = $coa->name ?? $coa->description ?? '-';
-                    $cat  = $coa->cost_type ?? $coa->classification ?? 'Variable';
-                    $rate = (float) ($coa->standard_rate_per_ton ?? $coa->rate ?? 0);
+                    $code = $coa->coa_code ?? '-';
+                    $name = $coa->name ?? '-';
+                    $cat  = $coa->cost_type ?? 'Variable';
+                    $rate = (float) ($coa->standard_rate_per_ton ?? 0);
                     $isSummary = str_contains(strtolower($cat), 'summary') || str_contains(strtolower($cat), 'balance');
                 @endphp
                 <tr class="hover:bg-slate-900/60 transition-colors {{ $isSummary ? 'opacity-60 bg-slate-900/40' : '' }}">
