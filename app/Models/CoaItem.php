@@ -14,8 +14,6 @@ class CoaItem extends Model
     protected $guarded = [];
 
     protected $casts = [
-        'rate' => 'decimal:2',
         'standard_rate_per_ton' => 'decimal:2',
-        'is_flexible' => 'boolean',
     ];
 }

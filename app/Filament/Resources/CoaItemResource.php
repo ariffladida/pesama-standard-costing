@@ -8,13 +8,11 @@ use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Select;
-use Filament\Forms\Components\Toggle;
 use Filament\Forms\Components\Section;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
 use Filament\Tables\Columns\TextColumn;
-use Filament\Tables\Columns\IconColumn;
 use Illuminate\Database\Eloquent\Builder;
 
 class CoaItemResource extends Resource
@@ -64,10 +62,6 @@ class CoaItemResource extends Resource
                             ->prefix('RM')
                             ->default(0.00)
                             ->required(),
-
-                        Toggle::make('is_flexible')
-                            ->label('Fleksibel')
-                            ->default(true),
                     ])->columns(2),
             ]);
     }
@@ -102,10 +96,6 @@ class CoaItemResource extends Resource
                     ->label('Kadar Std/Tan')
                     ->money('MYR')
                     ->sortable(),
-
-                IconColumn::make('is_flexible')
-                    ->label('Fleksibel')
-                    ->boolean(),
             ])
             ->actions([
                 Tables\Actions\EditAction::make(),
