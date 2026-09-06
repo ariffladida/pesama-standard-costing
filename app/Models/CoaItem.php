@@ -1,0 +1,21 @@
+<?php
+
+namespace App\Models;
+
+use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Model;
+
+class CoaItem extends Model
+{
+    use HasFactory;
+
+    protected $table = 'coa_items';
+
+    protected $guarded = [];
+
+    protected $casts = [
+        'rate' => 'decimal:2',
+        'standard_rate_per_ton' => 'decimal:2',
+        'is_flexible' => 'boolean',
+    ];
+}
