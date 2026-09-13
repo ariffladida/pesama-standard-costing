@@ -8,12 +8,13 @@
                 {{ $title }} &mdash; <span class="text-amber-400 font-semibold">{{ $plant }}</span>
             </p>
         </div>
-        <div class="mt-3 md:mt-0 flex gap-4 text-xs">
-            <div class="bg-slate-800/80 px-3 py-2 rounded-lg border border-slate-700">
+        <!-- Ditambah md:ml-auto dan justify-end supaya rapat ke kanan -->
+        <div class="mt-3 md:mt-0 flex gap-4 text-xs md:ml-auto justify-end">
+            <div class="bg-slate-800/80 px-3 py-2 rounded-lg border border-slate-700 text-right">
                 <span class="text-slate-400 block">Std Capacity (Moulding):</span>
                 <span class="text-white font-bold text-sm">{{ $capacityMoulding }}</span>
             </div>
-            <div class="bg-slate-800/80 px-3 py-2 rounded-lg border border-slate-700">
+            <div class="bg-slate-800/80 px-3 py-2 rounded-lg border border-slate-700 text-right">
                 <span class="text-slate-400 block">Std Capacity (FJ):</span>
                 <span class="text-white font-bold text-sm">{{ $capacityFj }}</span>
             </div>
